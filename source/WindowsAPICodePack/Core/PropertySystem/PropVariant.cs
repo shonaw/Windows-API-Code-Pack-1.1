@@ -1,22 +1,22 @@
 ﻿//Copyright (c) Microsoft Corporation.  All rights reserved.
 
+using Microsoft.WindowsAPICodePack.Resources;
+using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Microsoft.WindowsAPICodePack.Resources;
-using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 
 namespace MS.WindowsAPICodePack.Internal
 {
     /// <summary>
-    /// Represents the OLE struct PROPVARIANT.
-    /// This class is intended for internal use only.
+    /// Represents the OLE struct PROPVARIANT. This class is intended for internal use only.
     /// </summary>
     /// <remarks>
-    /// Originally sourced from http://blogs.msdn.com/adamroot/pages/interop-with-propvariants-in-net.aspx
-    /// and modified to support additional types including vectors and ability to set values
+    /// Originally sourced from
+    /// http://blogs.msdn.com/adamroot/pages/interop-with-propvariants-in-net.aspx and modified to
+    /// support additional types including vectors and ability to set values
     /// </remarks>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Portability", "CA1900:ValueTypeFieldsShouldBePortable", MessageId = "_ptr2")]
     [StructLayout(LayoutKind.Explicit)]
@@ -26,6 +26,7 @@ namespace MS.WindowsAPICodePack.Internal
 
         // A static dictionary of delegates to get data from array's contained within PropVariants
         private static Dictionary<Type, Action<PropVariant, Array, uint>> _vectorActions = null;
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static Dictionary<Type, Action<PropVariant, Array, uint>> GenerateVectorActions()
         {
@@ -98,7 +99,7 @@ namespace MS.WindowsAPICodePack.Internal
             });
 
             cache.Add(typeof(Single), (pv, array, i) => // float
-            {                
+            {
                 float[] val = new float[1];
                 Marshal.Copy(pv._ptr2, val, (int)i, 1);
                 array.SetValue(val[0], (int)i);
@@ -124,7 +125,8 @@ namespace MS.WindowsAPICodePack.Internal
 
             return cache;
         }
-        #endregion
+
+        #endregion Vector Action Cache
 
         #region Dynamic Construction / Factory (Expressions)
 
@@ -147,12 +149,12 @@ namespace MS.WindowsAPICodePack.Internal
 
         // A dictionary and lock to contain compiled expression trees for constructors
         private static Dictionary<Type, Func<object, PropVariant>> _cache = new Dictionary<Type, Func<object, PropVariant>>();
+
         private static object _padlock = new object();
 
-        // Retrieves a cached constructor expression.
-        // If no constructor has been cached, it attempts to find/add it.  If it cannot be found
-        // an exception is thrown.
-        // This method looks for a public constructor with the same parameter type as the object.
+        // Retrieves a cached constructor expression. If no constructor has been cached, it attempts
+        // to find/add it. If it cannot be found an exception is thrown. This method looks for a
+        // public constructor with the same parameter type as the object.
         private static Func<object, PropVariant> GetDynamicConstructor(Type type)
         {
             lock (_padlock)
@@ -171,10 +173,11 @@ namespace MS.WindowsAPICodePack.Internal
                     }
                     else // if the method was found, create an expression to call it.
                     {
-                        // create parameters to action                    
+                        // create parameters to action
                         var arg = Expression.Parameter(typeof(object), "arg");
 
-                        // create an expression to invoke the constructor with an argument cast to the correct type
+                        // create an expression to invoke the constructor with an argument cast to
+                        // the correct type
                         var create = Expression.New(constructor, Expression.Convert(arg, type));
 
                         // compiles expression into an action delegate
@@ -186,17 +189,17 @@ namespace MS.WindowsAPICodePack.Internal
             }
         }
 
-        #endregion
+        #endregion Dynamic Construction / Factory (Expressions)
 
         #region Fields
 
         [FieldOffset(0)]
-        decimal _decimal;
+        private decimal _decimal;
 
-        // This is actually a VarEnum value, but the VarEnum type
-        // requires 4 bytes instead of the expected 2.
+        // This is actually a VarEnum value, but the VarEnum type requires 4 bytes instead of the
+        // expected 2.
         [FieldOffset(0)]
-        ushort _valueType;
+        private ushort _valueType;
 
         // Reserved Fields
         //[FieldOffset(2)]
@@ -206,42 +209,50 @@ namespace MS.WindowsAPICodePack.Internal
         //[FieldOffset(6)]
         //ushort _wReserved3;
 
-        // In order to allow x64 compat, we need to allow for
-        // expansion of the IntPtr. However, the BLOB struct
-        // uses a 4-byte int, followed by an IntPtr, so
-        // although the valueData field catches most pointer values,
-        // we need an additional 4-bytes to get the BLOB
-        // pointer. The valueDataExt field provides this, as well as
-        // the last 4-bytes of an 8-byte value on 32-bit
-        // architectures.
+        // In order to allow x64 compat, we need to allow for expansion of the IntPtr. However, the
+        // BLOB struct uses a 4-byte int, followed by an IntPtr, so although the valueData field
+        // catches most pointer values, we need an additional 4-bytes to get the BLOB pointer. The
+        // valueDataExt field provides this, as well as the last 4-bytes of an 8-byte value on
+        // 32-bit architectures.
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
-        [FieldOffset(12)]
-        IntPtr _ptr2;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
-        [FieldOffset(8)]
-        IntPtr _ptr;
-        [FieldOffset(8)]
-        Int32 _int32;
-        [FieldOffset(8)]
-        UInt32 _uint32;
-        [FieldOffset(8)]
-        byte _byte;
-        [FieldOffset(8)]
-        sbyte _sbyte;
-        [FieldOffset(8)]
-        short _short;
-        [FieldOffset(8)]
-        ushort _ushort;
-        [FieldOffset(8)]
-        long _long;
-        [FieldOffset(8)]
-        ulong _ulong;
-        [FieldOffset(8)]
-        double _double;
-        [FieldOffset(8)]
-        float _float;
+        [FieldOffset(16)]
+        private IntPtr _ptr2;
 
-        #endregion // struct fields
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
+        [FieldOffset(8)]
+        private IntPtr _ptr;
+
+        [FieldOffset(8)]
+        private Int32 _int32;
+
+        [FieldOffset(8)]
+        private UInt32 _uint32;
+
+        [FieldOffset(8)]
+        private byte _byte;
+
+        [FieldOffset(8)]
+        private sbyte _sbyte;
+
+        [FieldOffset(8)]
+        private short _short;
+
+        [FieldOffset(8)]
+        private ushort _ushort;
+
+        [FieldOffset(8)]
+        private long _long;
+
+        [FieldOffset(8)]
+        private ulong _ulong;
+
+        [FieldOffset(8)]
+        private double _double;
+
+        [FieldOffset(8)]
+        private float _float;
+
+        #endregion Fields
 
         #region Constructors
 
@@ -305,7 +316,6 @@ namespace MS.WindowsAPICodePack.Internal
             if (value == null) { throw new ArgumentNullException("value"); }
 
             PropVariantNativeMethods.InitPropVariantFromUInt16Vector(value, (uint)value.Length, this);
-
         }
 
         /// <summary>
@@ -348,8 +358,8 @@ namespace MS.WindowsAPICodePack.Internal
             PropVariantNativeMethods.InitPropVariantFromUInt64Vector(value, (uint)value.Length, this);
         }
 
-        /// <summary>>
-        /// Set a double vector
+        /// <summary>
+        /// &gt; Set a double vector
         /// </summary>
         public PropVariant(double[] value)
         {
@@ -357,7 +367,6 @@ namespace MS.WindowsAPICodePack.Internal
 
             PropVariantNativeMethods.InitPropVariantFromDoubleVector(value, (uint)value.Length, this);
         }
-
 
         /// <summary>
         /// Set a DateTime vector
@@ -395,7 +404,6 @@ namespace MS.WindowsAPICodePack.Internal
             System.Runtime.InteropServices.ComTypes.FILETIME ft = DateTimeToFileTime(value);
             PropVariantNativeMethods.InitPropVariantFromFileTime(ref ft, this);
         }
-
 
         /// <summary>
         /// Set a byte value
@@ -452,14 +460,14 @@ namespace MS.WindowsAPICodePack.Internal
         }
 
         /// <summary>
-        /// Set a decimal  value
+        /// Set a decimal value
         /// </summary>
         public PropVariant(decimal value)
         {
             _decimal = value;
 
-            // It is critical that the value type be set after the decimal value, because they overlap.
-            // If valuetype is written first, its value will be lost when _decimal is written.
+            // It is critical that the value type be set after the decimal value, because they
+            // overlap. If valuetype is written first, its value will be lost when _decimal is written.
             _valueType = (ushort)VarEnum.VT_DECIMAL;
         }
 
@@ -475,9 +483,9 @@ namespace MS.WindowsAPICodePack.Internal
             _int32 = value.Length;
 
             // allocate required memory for array with 128bit elements
-            _ptr2 = Marshal.AllocCoTaskMem(value.Length * sizeof(decimal));            
+            _ptr2 = Marshal.AllocCoTaskMem(value.Length * sizeof(decimal));
             for (int i = 0; i < value.Length; i++)
-            {                
+            {
                 int[] bits = decimal.GetBits(value[i]);
                 Marshal.Copy(bits, 0, _ptr2, bits.Length);
             }
@@ -485,7 +493,7 @@ namespace MS.WindowsAPICodePack.Internal
 
         /// <summary>
         /// Create a PropVariant containing a float type.
-        /// </summary>        
+        /// </summary>
         public PropVariant(float value)
         {
             _valueType = (ushort)VarEnum.VT_R4;
@@ -495,14 +503,14 @@ namespace MS.WindowsAPICodePack.Internal
 
         /// <summary>
         /// Creates a PropVariant containing a float[] array.
-        /// </summary>        
+        /// </summary>
         public PropVariant(float[] value)
         {
             if (value == null) { throw new ArgumentNullException("value"); }
 
             _valueType = (ushort)(VarEnum.VT_R4 | VarEnum.VT_VECTOR);
             _int32 = value.Length;
-                        
+
             _ptr2 = Marshal.AllocCoTaskMem(value.Length * sizeof(float));
 
             Marshal.Copy(value, 0, _ptr2, value.Length);
@@ -535,7 +543,7 @@ namespace MS.WindowsAPICodePack.Internal
             _double = value;
         }
 
-        #endregion
+        #endregion Constructors
 
         #region Uncalled methods - These are currently not called, but I think may be valid in the future.
 
@@ -548,7 +556,6 @@ namespace MS.WindowsAPICodePack.Internal
             _valueType = (ushort)VarEnum.VT_UNKNOWN;
             _ptr = Marshal.GetIUnknownForObject(value);
         }
-
 
         /// <summary>
         /// Set a safe array value
@@ -579,7 +586,7 @@ namespace MS.WindowsAPICodePack.Internal
             _ptr = psa;
         }
 
-        #endregion
+        #endregion Uncalled methods - These are currently not called, but I think may be valid in the future.
 
         #region public Properties
 
@@ -615,76 +622,111 @@ namespace MS.WindowsAPICodePack.Internal
                 {
                     case VarEnum.VT_I1:
                         return _sbyte;
+
                     case VarEnum.VT_UI1:
                         return _byte;
+
                     case VarEnum.VT_I2:
                         return _short;
+
                     case VarEnum.VT_UI2:
                         return _ushort;
+
                     case VarEnum.VT_I4:
                     case VarEnum.VT_INT:
                         return _int32;
+
                     case VarEnum.VT_UI4:
                     case VarEnum.VT_UINT:
                         return _uint32;
+
                     case VarEnum.VT_I8:
                         return _long;
+
                     case VarEnum.VT_UI8:
                         return _ulong;
+
                     case VarEnum.VT_R4:
                         return _float;
+
                     case VarEnum.VT_R8:
                         return _double;
+
                     case VarEnum.VT_BOOL:
                         return _int32 == -1;
+
                     case VarEnum.VT_ERROR:
                         return _long;
+
                     case VarEnum.VT_CY:
                         return _decimal;
+
                     case VarEnum.VT_DATE:
                         return DateTime.FromOADate(_double);
+
                     case VarEnum.VT_FILETIME:
                         return DateTime.FromFileTime(_long);
+
                     case VarEnum.VT_BSTR:
                         return Marshal.PtrToStringBSTR(_ptr);
+
                     case VarEnum.VT_BLOB:
                         return GetBlobData();
+
                     case VarEnum.VT_LPSTR:
                         return Marshal.PtrToStringAnsi(_ptr);
+
                     case VarEnum.VT_LPWSTR:
                         return Marshal.PtrToStringUni(_ptr);
+
                     case VarEnum.VT_UNKNOWN:
                         return Marshal.GetObjectForIUnknown(_ptr);
+
                     case VarEnum.VT_DISPATCH:
                         return Marshal.GetObjectForIUnknown(_ptr);
+
                     case VarEnum.VT_DECIMAL:
                         return _decimal;
+
                     case VarEnum.VT_ARRAY | VarEnum.VT_UNKNOWN:
                         return CrackSingleDimSafeArray(_ptr);
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_LPWSTR):
                         return GetVector<string>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_I2):
                         return GetVector<Int16>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_UI2):
                         return GetVector<UInt16>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_I4):
                         return GetVector<Int32>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_UI4):
                         return GetVector<UInt32>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_I8):
                         return GetVector<Int64>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_UI8):
                         return GetVector<UInt64>();
-                    case (VarEnum.VT_VECTOR|VarEnum.VT_R4):
+
+                    case (VarEnum.VT_VECTOR | VarEnum.VT_R4):
                         return GetVector<float>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_R8):
                         return GetVector<Double>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_BOOL):
                         return GetVector<Boolean>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_FILETIME):
                         return GetVector<DateTime>();
+
                     case (VarEnum.VT_VECTOR | VarEnum.VT_DECIMAL):
                         return GetVector<Decimal>();
+
                     default:
                         // if the value cannot be marshaled
                         return null;
@@ -692,7 +734,7 @@ namespace MS.WindowsAPICodePack.Internal
             }
         }
 
-        #endregion
+        #endregion public Properties
 
         #region Private Methods
 
@@ -769,7 +811,7 @@ namespace MS.WindowsAPICodePack.Internal
             return array;
         }
 
-        #endregion
+        #endregion Private Methods
 
         #region IDisposable Members
 
@@ -791,7 +833,7 @@ namespace MS.WindowsAPICodePack.Internal
             Dispose();
         }
 
-        #endregion
+        #endregion IDisposable Members
 
         /// <summary>
         /// Provides an simple string representation of the contained data and type.
@@ -802,7 +844,5 @@ namespace MS.WindowsAPICodePack.Internal
             return string.Format(System.Globalization.CultureInfo.InvariantCulture,
                 "{0}: {1}", Value, VarType.ToString());
         }
-
     }
-
 }
