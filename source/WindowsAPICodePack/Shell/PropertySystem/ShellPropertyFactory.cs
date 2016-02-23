@@ -55,13 +55,15 @@ namespace Microsoft.WindowsAPICodePack.Shell.PropertySystem
             int hash = GetTypeHash(type, thirdType);
 
             Func<PropertyKey, ShellPropertyDescription, object, IShellProperty> ctor;
-            if (!_storeCache.TryGetValue(hash, out ctor))
-            {
-                Type[] argTypes = { typeof(PropertyKey), typeof(ShellPropertyDescription), thirdType };
-                ctor = ExpressConstructor(type, argTypes);
-                _storeCache.Add(hash, ctor);
+            lock (_storeCache)
+            { 
+                if (!_storeCache.TryGetValue(hash, out ctor))
+                {
+                    Type[] argTypes = { typeof(PropertyKey), typeof(ShellPropertyDescription), thirdType };
+                    ctor = ExpressConstructor(type, argTypes);
+                    _storeCache.Add(hash, ctor);
+                }
             }
-
             return ctor(propKey, propDesc, thirdArg);
         }
 
